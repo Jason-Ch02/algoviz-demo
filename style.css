@@ -1,0 +1,66 @@
+:root{
+  --bg:#0d1322; --card:#161d30; --ink:#e9eef8; --muted:#8c97b2; --line:#243049;
+  --accent:#2f6df6; --accent2:#7ef0c0;
+  --cell:#1a2236; --cell-line:#222c45;
+  --wall:#39415c;
+  --start:#22c98b; --end:#f0506e; --visited:#3f6bd4; --visited2:#6f4fd6; --path:#ffd23f;
+  --compare:#ffd23f; --swap:#f0506e; --sorted:#22c98b;
+  --sans:"Inter",system-ui,-apple-system,Segoe UI,Arial,sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--sans);background:var(--bg);color:var(--ink);line-height:1.5;-webkit-font-smoothing:antialiased;min-height:100vh;
+  background-image:radial-gradient(800px 400px at 80% -10%,rgba(47,109,246,.16),transparent)}
+.wrap{max-width:1040px;margin:0 auto;padding:30px 18px 50px}
+
+.head{display:flex;align-items:center;gap:14px;margin-bottom:18px}
+.logo{flex:none;box-shadow:0 6px 16px rgba(47,109,246,.35);border-radius:10px;display:flex}
+.head h1{font-size:23px;font-weight:800;letter-spacing:-.4px}
+.sub{font-size:13.5px;color:var(--muted);margin-top:2px}
+
+.tabs{display:flex;gap:6px;margin-bottom:16px;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:5px;width:max-content}
+.tab{font-family:inherit;font-size:14px;font-weight:700;color:var(--muted);background:transparent;border:0;border-radius:8px;padding:9px 20px;cursor:pointer}
+.tab.active{background:var(--accent);color:#fff}
+
+.view.hidden{display:none}
+.toolbar{display:flex;flex-wrap:wrap;align-items:flex-end;gap:12px;margin-bottom:10px}
+.toolbar label{display:flex;flex-direction:column;gap:5px;font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);font-weight:700}
+select,input[type=range]{font-family:inherit;font-size:13.5px;font-weight:600;color:var(--ink);background:#222a42;border:1px solid var(--line);border-radius:9px;padding:8px 10px;cursor:pointer;outline:none}
+input[type=range]{padding:0;width:130px;accent-color:var(--accent)}
+.btn{font-family:inherit;font-size:13.5px;font-weight:600;color:var(--ink);background:#222a42;border:1px solid var(--line);border-radius:9px;padding:9px 15px;cursor:pointer;transition:.15s}
+.btn:hover:not(:disabled){border-color:var(--accent);background:#283156}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn.ghost{background:transparent}
+.hint{font-size:12.5px;color:var(--muted);margin-bottom:12px}
+
+/* grid */
+.grid-wrap{overflow-x:auto;background:#0a0f1c;border:1px solid var(--line);border-radius:12px;padding:8px}
+.grid{display:grid;gap:1px;margin:0 auto;width:max-content}
+.cell{width:22px;height:22px;background:var(--cell);border-radius:2px;transition:background .08s}
+.cell.wall{background:var(--wall)}
+.cell.visited{background:var(--visited);animation:pop .3s ease}
+.cell.path{background:var(--path);animation:pop .3s ease}
+.cell.start{background:var(--start)}
+.cell.end{background:var(--end)}
+@keyframes pop{0%{transform:scale(.4)}100%{transform:scale(1)}}
+
+/* bars */
+.bars{display:flex;align-items:flex-end;gap:2px;height:340px;background:#0a0f1c;border:1px solid var(--line);border-radius:12px;padding:10px}
+.bar{flex:1;background:#4a78e8;border-radius:3px 3px 0 0}
+.bar.compare{background:var(--compare)}
+.bar.swap{background:var(--swap)}
+.bar.sorted{background:var(--sorted)}
+
+.legend{display:flex;flex-wrap:wrap;align-items:center;gap:16px;margin-top:12px;font-size:12.5px;color:var(--muted)}
+.legend span{display:flex;align-items:center;gap:6px}
+.sw{width:13px;height:13px;border-radius:3px;display:inline-block}
+.sw.start{background:var(--start)}.sw.end{background:var(--end)}.sw.wall{background:#39415c}
+.sw.visited{background:var(--visited)}.sw.path{background:var(--path)}
+.sw.compare{background:var(--compare)}.sw.swap{background:var(--swap)}.sw.sorted{background:var(--sorted)}
+.stat{margin-left:auto;font-family:var(--mono);color:var(--ink);font-weight:700}
+
+.foot{margin-top:24px;font-size:12px;color:var(--muted);text-align:center}
+.foot code{font-family:var(--mono);color:#aeb8cc}
+
+@media (max-width:560px){.wrap{padding:20px 12px 40px}.bars{height:260px}}

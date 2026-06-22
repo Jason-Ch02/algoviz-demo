@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>AlgoViz — Algorithm Visualizer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <main class="wrap">
+    <header class="head">
+      <span class="logo" aria-hidden="true">
+        <svg width="34" height="34" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect width="36" height="36" rx="10" fill="#2f6df6"/>
+          <circle cx="11" cy="11" r="3" fill="#fff"/>
+          <circle cx="25" cy="25" r="3" fill="#7ef0c0"/>
+          <path d="M11 11 H20 a4 4 0 0 1 4 4 V25" stroke="#fff" stroke-width="2" fill="none" stroke-dasharray="2 2"/>
+        </svg>
+      </span>
+      <div>
+        <h1>AlgoViz</h1>
+        <p class="sub">Watch pathfinding and sorting algorithms work, step by step</p>
+      </div>
+    </header>
+
+    <div class="tabs">
+      <button class="tab active" data-tab="path">Pathfinding</button>
+      <button class="tab" data-tab="sort">Sorting</button>
+    </div>
+
+    <!-- PATHFINDING -->
+    <section class="view" id="view-path">
+      <div class="toolbar">
+        <label>Algorithm
+          <select id="pathAlgo">
+            <option value="astar">A* search</option>
+            <option value="dijkstra">Dijkstra</option>
+            <option value="bfs">Breadth-first</option>
+          </select>
+        </label>
+        <label>Preset
+          <select id="preset">
+            <option value="">— none —</option>
+            <option value="Random">Random walls</option>
+          </select>
+        </label>
+        <label>Speed
+          <select id="pathSpeed">
+            <option value="28">Slow</option>
+            <option value="14" selected>Normal</option>
+            <option value="4">Fast</option>
+          </select>
+        </label>
+        <button class="btn primary" id="runPath">▶ Visualize</button>
+        <button class="btn" id="clearPathBtn">Clear path</button>
+        <button class="btn ghost" id="clearWalls">Clear walls</button>
+      </div>
+      <p class="hint">Click and drag on the grid to draw walls · drag the green start or red target to move them.</p>
+      <div class="grid-wrap"><div class="grid" id="grid"></div></div>
+      <div class="legend">
+        <span><i class="sw start"></i>Start</span>
+        <span><i class="sw end"></i>Target</span>
+        <span><i class="sw wall"></i>Wall</span>
+        <span><i class="sw visited"></i>Visited</span>
+        <span><i class="sw path"></i>Path</span>
+        <span class="stat" id="pathStat"></span>
+      </div>
+    </section>
+
+    <!-- SORTING -->
+    <section class="view hidden" id="view-sort">
+      <div class="toolbar">
+        <label>Algorithm
+          <select id="sortAlgo">
+            <option value="bubble">Bubble sort</option>
+            <option value="selection">Selection sort</option>
+            <option value="insertion">Insertion sort</option>
+            <option value="quick">Quick sort</option>
+            <option value="merge">Merge sort</option>
+          </select>
+        </label>
+        <label>Size <input type="range" id="sortSize" min="10" max="80" value="40" /></label>
+        <label>Speed
+          <select id="sortSpeed">
+            <option value="60">Slow</option>
+            <option value="25" selected>Normal</option>
+            <option value="6">Fast</option>
+          </select>
+        </label>
+        <button class="btn" id="newArray">↻ New array</button>
+        <button class="btn primary" id="runSort">▶ Sort</button>
+      </div>
+      <p class="hint">Bars are compared (highlighted) and swapped until the array is sorted.</p>
+      <div class="bars" id="bars"></div>
+      <div class="legend">
+        <span><i class="sw compare"></i>Comparing</span>
+        <span><i class="sw swap"></i>Swapping</span>
+        <span><i class="sw sorted"></i>Sorted</span>
+        <span class="stat" id="sortStat"></span>
+      </div>
+    </section>
+
+    <footer class="foot" id="foot"></footer>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
