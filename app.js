@@ -138,6 +138,32 @@ function search(algo) {
   return { order, path: [] };
 }
 
+function depthFirstSearch() {
+  const sK = key(start.r, start.c);
+  const eK = key(end.r, end.c);
+  if (sK === eK) {return {order: [],path: [sK]};}
+  const stack = [sK];
+  const visited = new Set([sK]);
+  const prev = {};
+  const order = [];
+  while (stack.length > 0) {
+    const current = stack.pop();
+    if (current === eK) {return {order,path: reconstruct(prev, sK, eK)};}
+    const [r, c] = parseKey(current);
+    const nextCells = neighbors(r, c);
+    for (let i = nextCells.length - 1; i >= 0; i--) {
+      const [nr, nc] = nextCells[i];
+      const next = key(nr, nc);
+      if (visited.has(next)) {continue;}
+      visited.add(next);
+      prev[next] = current;
+      stack.push(next);
+      if (next !== sK && next !== eK) {order.push(next);}
+    }
+  }
+  return {order,path: []};
+}
+
 function reconstruct(prev, sK, eK) {
   const path = []; let k = eK;
   while (k && k !== sK) { path.push(k); k = prev[k]; }
@@ -196,9 +222,7 @@ function bidirectionalBFS() {
       const [r, c] = parseKey(current);
       for (const [nr, nc] of neighbors(r, c)) {
         const next = key(nr, nc);
-        if (ownVisited.has(next)) {
-          continue;
-        }
+        if (ownVisited.has(next)) {continue;}
         ownVisited.add(next);
         ownPrev[next] = current;
         ownDist[next] = ownDist[current] + 1;
@@ -207,8 +231,7 @@ function bidirectionalBFS() {
           order.push(next);
         }
         if (otherVisited.has(next)) {
-          const totalLength =
-            ownDist[next] + otherDist[next];
+          const totalLength =ownDist[next] + otherDist[next];
           if (totalLength < bestLength) {
             bestLength = totalLength;
             bestMeet = next;
@@ -216,58 +239,29 @@ function bidirectionalBFS() {
         }
       }
     }
-    if (fromStart) {
-      headStart = head;
-    } else {
-      headEnd = head;
-    }
-    if (bestMeet !== null) {
-      meet = bestMeet;
-      break;
-    }
+    if (fromStart) {headStart = head;} 
+    else{headEnd = head;}
+    if (bestMeet !== null) {meet = bestMeet;break;}
   }
-  if (meet === null) {
-    return {
-      orderStart,
-      orderEnd,
-      path: []
-    };
-  }
+  if (meet === null) {return {orderStart,orderEnd,path: []};}
   const leftPath = [];
   let k = meet;
-
   while (k !== undefined) {
     leftPath.push(k);
-
-    if (k === sK) {
-      break;
-    }
-
+    if (k === sK) {break;}
     k = prevStart[k];
   }
   leftPath.reverse();
   const rightPath = [];
   k = prevEnd[meet];
-
   while (k !== undefined) {
     rightPath.push(k);
-
-    if (k === eK) {
-      break;
-    }
-
+    if (k === eK) {break;}
     k = prevEnd[k];
   }
   const path = leftPath.concat(rightPath);
-
-  return {
-    orderStart,
-    orderEnd,
-    path
-  };
+  return {orderStart,orderEnd,path};
 }
-
-
 
 function visualize() {
   clearPathClasses();
@@ -277,11 +271,7 @@ function visualize() {
   timers.forEach(clearTimeout);
   timers = [];
   if (algo === "bidirectional") {
-    const {
-      orderStart,
-      orderEnd,
-      path
-    } = bidirectionalBFS();
+    const {orderStart,orderEnd,path} = bidirectionalBFS();
     orderStart.forEach((k, i) => {
       timers.push(setTimeout(() => {
         cellEls[k].classList.remove("visited-end");
@@ -331,7 +321,7 @@ function visualize() {
     }, after + path.length * pstep));
     return;
   }
-  const { order, path } = search(algo);
+const { order, path } =algo === "dfs"? depthFirstSearch(): search(algo);
   order.forEach((k, i) => {
     timers.push(
       setTimeout(
