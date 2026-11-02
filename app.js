@@ -42,7 +42,7 @@ function buildGrid() {
 function paint() {
   for (const k in cellEls) {
     const el = cellEls[k];
-    el.classList.remove("wall", "start", "end", "visited", "path");
+    el.classList.remove("wall", "start", "end", "visited","visited-start","visited-end", "path");
     if (walls.has(k)) el.classList.add("wall");
   }
   cellEls[key(start.r, start.c)].classList.add("start");
@@ -50,7 +50,9 @@ function paint() {
 }
 
 function clearPathClasses() {
-  for (const k in cellEls) cellEls[k].classList.remove("visited", "path");
+  for (const k in cellEls) {
+    cellEls[k].classList.remove("visited","visited-start","visited-end","path");
+  }
   $("pathStat").textContent = "";
 }
 
@@ -148,30 +150,223 @@ function setPathControls(on) {
   running = !on;
 }
 
+function bidirectionalBFS() {
+  const sK = key(start.r, start.c);
+  const eK = key(end.r, end.c);
+  if (sK === eK) {
+    return {
+      orderStart: [],
+      orderEnd: [],
+      path: [sK]
+    };
+  }
+  const queueStart = [sK];
+  const queueEnd = [eK];
+  let headStart = 0;
+  let headEnd = 0;
+  const visitedStart = new Set([sK]);
+  const visitedEnd = new Set([eK]);
+  const prevStart = {};
+  const prevEnd = {};
+  const distStart = { [sK]: 0 };
+  const distEnd = { [eK]: 0 };
+  const orderStart = [];
+  const orderEnd = [];
+  let expandStart = true;
+  let meet = null;
+  while (
+    headStart < queueStart.length &&
+    headEnd < queueEnd.length
+  ) {
+    const fromStart = expandStart;
+    expandStart = !expandStart;
+    const queue = fromStart ? queueStart : queueEnd;
+    const otherVisited = fromStart ? visitedEnd : visitedStart;
+    const ownVisited = fromStart ? visitedStart : visitedEnd;
+    const ownPrev = fromStart ? prevStart : prevEnd;
+    const ownDist = fromStart ? distStart : distEnd;
+    const otherDist = fromStart ? distEnd : distStart;
+    const order = fromStart ? orderStart : orderEnd;
+    let head = fromStart ? headStart : headEnd;
+    const layerEnd = queue.length;
+    let bestMeet = null;
+    let bestLength = Infinity;
+    while (head < layerEnd) {
+      const current = queue[head++];
+      const [r, c] = parseKey(current);
+      for (const [nr, nc] of neighbors(r, c)) {
+        const next = key(nr, nc);
+        if (ownVisited.has(next)) {
+          continue;
+        }
+        ownVisited.add(next);
+        ownPrev[next] = current;
+        ownDist[next] = ownDist[current] + 1;
+        queue.push(next);
+        if (next !== sK && next !== eK) {
+          order.push(next);
+        }
+        if (otherVisited.has(next)) {
+          const totalLength =
+            ownDist[next] + otherDist[next];
+          if (totalLength < bestLength) {
+            bestLength = totalLength;
+            bestMeet = next;
+          }
+        }
+      }
+    }
+    if (fromStart) {
+      headStart = head;
+    } else {
+      headEnd = head;
+    }
+    if (bestMeet !== null) {
+      meet = bestMeet;
+      break;
+    }
+  }
+  if (meet === null) {
+    return {
+      orderStart,
+      orderEnd,
+      path: []
+    };
+  }
+  const leftPath = [];
+  let k = meet;
+
+  while (k !== undefined) {
+    leftPath.push(k);
+
+    if (k === sK) {
+      break;
+    }
+
+    k = prevStart[k];
+  }
+  leftPath.reverse();
+  const rightPath = [];
+  k = prevEnd[meet];
+
+  while (k !== undefined) {
+    rightPath.push(k);
+
+    if (k === eK) {
+      break;
+    }
+
+    k = prevEnd[k];
+  }
+  const path = leftPath.concat(rightPath);
+
+  return {
+    orderStart,
+    orderEnd,
+    path
+  };
+}
+
+
+
 function visualize() {
   clearPathClasses();
   const speed = +$("pathSpeed").value;
-  const { order, path } = search($("pathAlgo").value);
+  const algo = $("pathAlgo").value;
   setPathControls(false);
-  timers.forEach(clearTimeout); timers = [];
+  timers.forEach(clearTimeout);
+  timers = [];
+  if (algo === "bidirectional") {
+    const {
+      orderStart,
+      orderEnd,
+      path
+    } = bidirectionalBFS();
+    orderStart.forEach((k, i) => {
+      timers.push(setTimeout(() => {
+        cellEls[k].classList.remove("visited-end");
+        cellEls[k].classList.add("visited-start");
+      }, i * speed));
+    });
+    orderEnd.forEach((k, i) => {
+      timers.push(setTimeout(() => {
+        cellEls[k].classList.remove("visited-start");
+        cellEls[k].classList.add("visited-end");
+      }, i * speed));
+    });
+    const after = Math.max(
+      orderStart.length,
+      orderEnd.length
+    ) * speed;
+    if (!path.length) {
+      timers.push(setTimeout(() => {
+        $("pathStat").textContent = "no path — blocked!";
+        setPathControls(true);
+      }, after));
+      return;
+    }
+    const pstep = Math.max(22, speed);
+    path.forEach((k, i) => {
+      if (
+        k === key(start.r, start.c) ||
+        k === key(end.r, end.c)
+      ) {
+        return;
+      }
+      timers.push(setTimeout(() => {
+        cellEls[k].classList.remove(
+          "visited-start",
+          "visited-end"
+        );
+        cellEls[k].classList.add("path");
+      }, after + i * pstep));
+    });
+    timers.push(setTimeout(() => {
+      const totalVisited =
+        orderStart.length + orderEnd.length;
+      $("pathStat").textContent =
+        `visited ${totalVisited} (${orderStart.length}+${orderEnd.length}) · path ${path.length - 1} steps`;
 
-  order.forEach((k, i) => timers.push(setTimeout(() => cellEls[k].classList.add("visited"), i * speed)));
-
+      setPathControls(true);
+    }, after + path.length * pstep));
+    return;
+  }
+  const { order, path } = search(algo);
+  order.forEach((k, i) => {
+    timers.push(
+      setTimeout(
+        () => cellEls[k].classList.add("visited"),
+        i * speed
+      )
+    );
+  });
   const after = order.length * speed;
   if (!path.length) {
-    timers.push(setTimeout(() => { $("pathStat").textContent = "no path — blocked!"; setPathControls(true); }, after));
+    timers.push(setTimeout(() => {
+      $("pathStat").textContent = "no path — blocked!";
+      setPathControls(true);
+    }, after));
     return;
   }
   const pstep = Math.max(22, speed);
   path.forEach((k, i) => {
-    if (k === key(start.r, start.c) || k === key(end.r, end.c)) return;
-    timers.push(setTimeout(() => cellEls[k].classList.add("path"), after + i * pstep));
+    if (
+      k === key(start.r, start.c) ||
+      k === key(end.r, end.c)
+    ) {
+      return;
+    }
+    timers.push(setTimeout(() => {
+      cellEls[k].classList.add("path");
+    }, after + i * pstep));
   });
   timers.push(setTimeout(() => {
-    $("pathStat").textContent = `visited ${order.length} · path ${path.length - 1} steps`;
+    $("pathStat").textContent =
+      `visited ${order.length} · path ${path.length - 1} steps`;
     setPathControls(true);
   }, after + path.length * pstep));
 }
+
 
 /* ===================== SORTING ===================== */
 let arr = [], barEls = [], sorting = false, sortTimers = [];
