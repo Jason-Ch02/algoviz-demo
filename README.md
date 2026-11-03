@@ -1,7 +1,7 @@
 # 🧭 AlgoViz
 
 > This project is modified based on [AlgoViz](https://github.com/evelinvee/algoviz).
-> The original framework, sorting and basic pathfinding algorithms are implemented by evelinvee.
+> Based on the original framework implemented by evelinvee.
 > I added bidirectional BFS (双向广度优先搜索) visualization as my independent work.
 > 
 An interactive algorithm visualizer. Watch **pathfinding** algorithms (A*, Dijkstra, breadth-first) explore a grid you can draw walls on, and **sorting** algorithms (bubble, selection, insertion, quick, merge) rearrange a bar chart step by step. A small Python script generates the preset mazes; the rest runs entirely in the browser.
@@ -55,6 +55,3 @@ LICENSE
 Python (standard library) · vanilla JavaScript · HTML · CSS. Search uses a shared best-first
 frontier (BFS / Dijkstra / A\*); sorts are recorded as comparison/swap steps and replayed.
 
-## 📄 License
-
-MIT © [evelinvee](https://github.com/evelinvee)
