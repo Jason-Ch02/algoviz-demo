@@ -19,6 +19,7 @@ const walls = new Set();
 const cellEls = {};
 let pdown = false, mode = "wall", drawAdd = true, running = false;
 let timers = [];
+let pathOriginalState = null;
 
 const key = (r, c) => r + "," + c;
 const parseKey = k => k.split(",").map(Number);
@@ -173,6 +174,7 @@ function reconstruct(prev, sK, eK) {
 
 function setPathControls(on) {
   ["runPath", "clearPathBtn", "clearWalls", "pathAlgo", "preset", "pathSpeed"].forEach(id => $(id).disabled = !on);
+   $("exitPath").disabled = on;
   running = !on;
 }
 
@@ -264,6 +266,7 @@ function bidirectionalBFS() {
 }
 
 function visualize() {
+  pathOriginalState = {start: { ...start },end: { ...end },walls: new Set(walls)};
   clearPathClasses();
   const speed = +$("pathSpeed").value;
   const algo = $("pathAlgo").value;
@@ -357,9 +360,23 @@ const { order, path } =algo === "dfs"? depthFirstSearch(): search(algo);
   }, after + path.length * pstep));
 }
 
+function exitPath() {
+  if (!running || !pathOriginalState) return;
+  timers.forEach(clearTimeout);
+  timers = [];
+  start = { ...pathOriginalState.start };
+  end = { ...pathOriginalState.end };
+  walls.clear();
+  pathOriginalState.walls.forEach(k => walls.add(k));
+  clearPathClasses();
+  paint();
+  pdown = false;
+  setPathControls(true);
+  pathOriginalState = null;
+}
 
 /* ===================== SORTING ===================== */
-let arr = [], barEls = [], sorting = false, sortTimers = [];
+let arr = [], barEls = [], sorting = false, sortTimers = [],sortOriginalArray = [];
 
 function newArray() {
   const size = +$("sortSize").value;
@@ -439,10 +456,12 @@ function genSteps(algo, a) {
 
 function setSortControls(on) {
   ["runSort", "newArray", "sortAlgo", "sortSize", "sortSpeed"].forEach(id => $(id).disabled = !on);
+  $("exitSort").disabled = on;
   sorting = !on;
 }
 
 function runSort() {
+  sortOriginalArray = arr.slice();
   const speed = +$("sortSpeed").value;
   const steps = genSteps($("sortAlgo").value, arr.slice());
   setSortControls(false);
@@ -473,6 +492,16 @@ function runSort() {
   }, steps.length * speed + 50));
 }
 
+function exitSort() {
+  if (!sorting) return;
+  sortTimers.forEach(clearTimeout);
+  sortTimers = [];
+  arr = sortOriginalArray.slice();
+  renderBars();
+  $("sortStat").textContent = "";
+  setSortControls(true);
+}
+
 /* ===================== INIT ===================== */
 async function init() {
   DATA = await (await fetch("data.json")).json();
@@ -495,9 +524,12 @@ async function init() {
   $("clearPathBtn").addEventListener("click", clearPathClasses);
   $("clearWalls").addEventListener("click", () => { walls.clear(); clearPathClasses(); paint(); });
   $("preset").addEventListener("change", e => loadPreset(e.target.value));
+  $("exitPath").addEventListener("click", exitPath);
+  
 
   $("newArray").addEventListener("click", newArray);
   $("runSort").addEventListener("click", runSort);
+  $("exitSort").addEventListener("click", exitSort);
   $("sortSize").addEventListener("input", newArray);
 
   newArray();
