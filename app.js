@@ -443,7 +443,7 @@ async function visualize() {
 
   timers.push(setTimeout(() => {
     $("pathStat").textContent =
-      `visited ${order.length} · path ${path.length - 1} steps`;
+      `已访问 ${order.length} 个节点 · 路径长度 ${path.length - 1} 步`;
 
     setPathControls(true);
   }, after + path.length * pstep));
