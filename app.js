@@ -105,12 +105,12 @@ function loadPreset(name) {
 }
 
 /* ---- search: bfs / dijkstra / a* ---- */
-function neighbors(r, c) {
+async function neighbors(r, c) {
   return [[r - 1, c], [r + 1, c], [r, c - 1], [r, c + 1]]
     .filter(([nr, nc]) => nr >= 0 && nr < ROWS && nc >= 0 && nc < COLS && !walls.has(key(nr, nc)));
 }
 
-function search(algo) {
+async function search(algo) {
   const sK = key(start.r, start.c), eK = key(end.r, end.c);
   const dist = { [sK]: 0 }, prev = {}, order = [], visited = new Set();
   const h = (r, c) => Math.abs(r - end.r) + Math.abs(c - end.c);
@@ -139,7 +139,7 @@ function search(algo) {
   return { order, path: [] };
 }
 
-function depthFirstSearch() {
+async function depthFirstSearch() {
   const sK = key(start.r, start.c);
   const eK = key(end.r, end.c);
   if (sK === eK) {return {order: [],path: [sK]};}
@@ -172,13 +172,13 @@ function reconstruct(prev, sK, eK) {
   return [];
 }
 
-function setPathControls(on) {
+async function setPathControls(on) {
   ["runPath", "clearPathBtn", "clearWalls", "pathAlgo", "preset", "pathSpeed"].forEach(id => $(id).disabled = !on);
    $("exitPath").disabled = on;
   running = !on;
 }
 
-function bidirectionalBFS() {
+async function bidirectionalBFS() {
   const sK = key(start.r, start.c);
   const eK = key(end.r, end.c);
   if (sK === eK) {
@@ -265,39 +265,73 @@ function bidirectionalBFS() {
   return {orderStart,orderEnd,path};
 }
 
-function visualize() {
-  pathOriginalState = {start: { ...start },end: { ...end },walls: new Set(walls)};
+
+async function visualize() {
+  pathOriginalState = {
+    start: { ...start },
+    end: { ...end },
+    walls: new Set(walls)
+  };
+
   clearPathClasses();
+
   const speed = +$("pathSpeed").value;
   const algo = $("pathAlgo").value;
+
   setPathControls(false);
+
   timers.forEach(clearTimeout);
   timers = [];
+
   if (algo === "bidirectional") {
-    const {orderStart,orderEnd,path} = bidirectionalBFS();
+    let result;
+
+    try {
+      result = await window.wasmBridge.runPathfinding(
+        2,
+        ROWS,
+        COLS,
+        walls,
+        start,
+        end
+      );
+    } catch (error) {
+      console.error("Bidirectional BFS WASM error:", error);
+      $("pathStat").textContent = "algorithm error";
+      setPathControls(true);
+      return;
+    }
+
+    const { orderStart, orderEnd, path } = result;
+
     orderStart.forEach((k, i) => {
       timers.push(setTimeout(() => {
         cellEls[k].classList.remove("visited-end");
         cellEls[k].classList.add("visited-start");
       }, i * speed));
     });
+
     orderEnd.forEach((k, i) => {
       timers.push(setTimeout(() => {
         cellEls[k].classList.remove("visited-start");
         cellEls[k].classList.add("visited-end");
       }, i * speed));
     });
+
     const after = Math.max(
       orderStart.length,
       orderEnd.length
     ) * speed;
+
     if (!path.length) {
       timers.push(setTimeout(() => {
         $("pathStat").textContent = "no path — blocked!";
         setPathControls(true);
       }, after));
+
       return;
     }
+
     const pstep = Math.max(22, speed);
     path.forEach((k, i) => {
       if (
@@ -306,6 +340,7 @@ function visualize() {
       ) {
         return;
       }
+
       timers.push(setTimeout(() => {
         cellEls[k].classList.remove(
           "visited-start",
@@ -314,17 +349,63 @@ function visualize() {
         cellEls[k].classList.add("path");
       }, after + i * pstep));
     });
+
     timers.push(setTimeout(() => {
       const totalVisited =
         orderStart.length + orderEnd.length;
+
       $("pathStat").textContent =
         `visited ${totalVisited} (${orderStart.length}+${orderEnd.length}) · path ${path.length - 1} steps`;
 
       setPathControls(true);
     }, after + path.length * pstep));
+
     return;
   }
-const { order, path } =algo === "dfs"? depthFirstSearch(): search(algo);
+
+  let result;
+  try {
+    if (algo === "bfs") {
+      // BFS 
+      result = await window.wasmBridge.runBFS(
+        ROWS,
+        COLS,
+        walls,
+        start,
+        end
+      );
+    } else {
+      // DFS、Dijkstra、A* 
+      const algorithmCodes = {
+        dfs: 1,
+        dijkstra: 3,
+        astar: 4
+      };
+
+      const algorithmCode = algorithmCodes[algo];
+
+      if (!algorithmCode) {
+        throw new Error(`Unknown algorithm: ${algo}`);
+      }
+
+      result = await window.wasmBridge.runPathfinding(
+        algorithmCode,
+        ROWS,
+        COLS,
+        walls,
+        start,
+        end
+      );
+    }
+  } catch (error) {
+    console.error("Pathfinding WASM error:", error);
+    $("pathStat").textContent = "algorithm error";
+    setPathControls(true);
+    return;
+  }
+
+  const { order, path } = result;
+
   order.forEach((k, i) => {
     timers.push(
       setTimeout(
@@ -333,15 +414,20 @@ const { order, path } =algo === "dfs"? depthFirstSearch(): search(algo);
       )
     );
   });
+
   const after = order.length * speed;
+
   if (!path.length) {
     timers.push(setTimeout(() => {
       $("pathStat").textContent = "no path — blocked!";
       setPathControls(true);
     }, after));
+
     return;
   }
+
   const pstep = Math.max(22, speed);
+
   path.forEach((k, i) => {
     if (
       k === key(start.r, start.c) ||
@@ -349,16 +435,20 @@ const { order, path } =algo === "dfs"? depthFirstSearch(): search(algo);
     ) {
       return;
     }
+
     timers.push(setTimeout(() => {
       cellEls[k].classList.add("path");
     }, after + i * pstep));
   });
+
   timers.push(setTimeout(() => {
     $("pathStat").textContent =
       `visited ${order.length} · path ${path.length - 1} steps`;
+
     setPathControls(true);
   }, after + path.length * pstep));
 }
+
 
 function exitPath() {
   if (!running || !pathOriginalState) return;
@@ -376,7 +466,7 @@ function exitPath() {
 }
 
 /* ===================== SORTING ===================== */
-let arr = [], barEls = [], sorting = false, sortTimers = [],sortOriginalArray = [];
+let arr = [], barEls = [], sorting = false, sortTimers = [], sortOriginalArray = [], sortRunId = 0;
 
 function newArray() {
   const size = +$("sortSize").value;
@@ -460,12 +550,37 @@ function setSortControls(on) {
   sorting = !on;
 }
 
-function runSort() {
+async function runSort() {
   sortOriginalArray = arr.slice();
   const speed = +$("sortSpeed").value;
-  const steps = genSteps($("sortAlgo").value, arr.slice());
+  const algorithm = {
+    bubble: 0,
+    selection: 1,
+    insertion: 2,
+    quick: 3,
+    merge: 4
+  }[$("sortAlgo").value];
+
+  const currentRunId = ++sortRunId;
+
   setSortControls(false);
-  sortTimers.forEach(clearTimeout); sortTimers = [];
+  sortTimers.forEach(clearTimeout);
+  sortTimers = [];
+
+  let steps;
+
+  try {
+    steps = await window.wasmBridge.runSort(algorithm, arr.slice());
+  } catch (error) {
+    if (currentRunId !== sortRunId) return;
+    console.error("Sorting WASM failed:", error);
+    $("sortStat").textContent = "Sorting failed. Check console.";
+    setSortControls(true);
+    return;
+  }
+
+  if (currentRunId !== sortRunId) return;
+
   let comparisons = 0, swaps = 0;
   let prev = [];
 
@@ -473,21 +588,39 @@ function runSort() {
     sortTimers.push(setTimeout(() => {
       prev.forEach(b => b.classList.remove("compare", "swap"));
       prev = [];
-      if (s.t === "compare") { comparisons++; barEls[s.i].classList.add("compare"); barEls[s.j].classList.add("compare"); prev = [barEls[s.i], barEls[s.j]]; }
+      if (s.t === "compare") {
+        comparisons++;
+        barEls[s.i].classList.add("compare");
+        barEls[s.j].classList.add("compare");
+        prev = [barEls[s.i], barEls[s.j]];
+      }
       else if (s.t === "swap") {
         swaps++;
         const hi = barEls[s.i].style.height, hj = barEls[s.j].style.height;
-        barEls[s.i].style.height = hj; barEls[s.j].style.height = hi;
-        barEls[s.i].classList.add("swap"); barEls[s.j].classList.add("swap");
+        barEls[s.i].style.height = hj;
+        barEls[s.j].style.height = hi;
+        barEls[s.i].classList.add("swap");
+        barEls[s.j].classList.add("swap");
         prev = [barEls[s.i], barEls[s.j]];
-      } else if (s.t === "set") { barEls[s.i].style.height = s.v + "%"; barEls[s.i].classList.add("swap"); prev = [barEls[s.i]]; }
-      else if (s.t === "sorted") { barEls[s.i].classList.add("sorted"); }
+      }
+      else if (s.t === "set") {
+        barEls[s.i].style.height = s.v + "%";
+        barEls[s.i].classList.add("swap");
+        prev = [barEls[s.i]];
+      }
+      else if (s.t === "sorted") {
+        barEls[s.i].classList.add("sorted");
+      }
       $("sortStat").textContent = `${comparisons} comparisons · ${swaps} swaps`;
     }, idx * speed));
   });
 
   sortTimers.push(setTimeout(() => {
-    barEls.forEach(b => { b.classList.remove("compare", "swap"); b.classList.add("sorted"); });
+    if (currentRunId !== sortRunId) return;
+    barEls.forEach(b => {
+      b.classList.remove("compare", "swap");
+      b.classList.add("sorted");
+    });
     setSortControls(true);
   }, steps.length * speed + 50));
 }

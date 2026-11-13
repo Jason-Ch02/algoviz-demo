@@ -1,9 +1,10 @@
+
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-CN">
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>AlgoViz — Algorithm Visualizer</title>
+<title>AlgoViz — 算法可视化</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@600;700&display=swap" rel="stylesheet">
@@ -22,88 +23,94 @@
       </span>
       <div>
         <h1>AlgoViz</h1>
-        <p class="sub">Watch pathfinding and sorting algorithms work, step by step</p>
+        <p class="sub">逐步观察路径搜索与排序算法的运行过程</p>
       </div>
     </header>
 
     <div class="tabs">
-      <button class="tab active" data-tab="path">Pathfinding</button>
-      <button class="tab" data-tab="sort">Sorting</button>
+      <button class="tab active" data-tab="path">路径搜索</button>
+      <button class="tab" data-tab="sort">排序算法</button>
     </div>
 
-    <!-- PATHFINDING -->
+    <!-- 路径搜索 -->
     <section class="view" id="view-path">
       <div class="toolbar">
-        <label>Algorithm
+        <label>算法
           <select id="pathAlgo">
-            <option value="astar">A* search</option>
-            <option value="dijkstra">Dijkstra</option>
-            <option value="bfs">Breadth-first</option>
-            <option value="bidirectional">Bidirectional BFS</option>
-            <option value="dfs">Depth-first Search (DFS)</option>
+            <option value="astar">A* 搜索</option>
+            <option value="dijkstra">Dijkstra 算法</option>
+            <option value="bfs">广度优先搜索（BFS）</option>
+            <option value="bidirectional">双向广度优先搜索（双向 BFS）</option>
+            <option value="dfs">深度优先搜索（DFS）</option>
           </select>
         </label>
-        <label>Preset
+        <label>地图预设
           <select id="preset">
-            <option value="">— none —</option>
-            <option value="Random">Random walls</option>
+            <option value="">— 无 —</option>
+            <option value="Random">随机生成障碍物</option>
           </select>
         </label>
-        <label>Speed
+        <label>演示速度
           <select id="pathSpeed">
-            <option value="28">Slow</option>
-            <option value="14" selected>Normal</option>
-            <option value="4">Fast</option>
+            <option value="28">慢速</option>
+            <option value="14" selected>正常</option>
+            <option value="4">快速</option>
           </select>
         </label>
-        <button class="btn primary" id="runPath">▶ Visualize</button>
-        <button class="btn" id="exitPath" disabled>✕ Exit</button>
-        <button class="btn" id="clearPathBtn">Clear path</button>
-        <button class="btn ghost" id="clearWalls">Clear walls</button>
+        <button class="btn primary" id="runPath">▶ 开始演示</button>
+        <button class="btn" id="exitPath" disabled>✕ 退出</button>
+        <button class="btn" id="clearPathBtn">清除路径</button>
+        <button class="btn ghost" id="clearWalls">清除障碍物</button>
       </div>
-      <p class="hint">Click and drag on the grid to draw walls · drag the green start or red target to move them.</p>
+
+      <p class="hint">在网格中点击并拖动以绘制障碍物；拖动绿色起点或红色终点可以调整位置。</p>
+
       <div class="grid-wrap"><div class="grid" id="grid"></div></div>
+
       <div class="legend">
-        <span><i class="sw start"></i>Start</span>
-        <span><i class="sw end"></i>Target</span>
-        <span><i class="sw wall"></i>Wall</span>
-        <span><i class="sw visited-start"></i>Start-side search</span>
-        <span><i class="sw visited-end"></i>End-side search</span>
-        <span><i class="sw path"></i>Path</span>
+        <span><i class="sw start"></i>起点</span>
+        <span><i class="sw end"></i>终点</span>
+        <span><i class="sw wall"></i>障碍物</span>
+        <span><i class="sw visited-start"></i>起点方向搜索区域</span>
+        <span><i class="sw visited-end"></i>终点方向搜索区域</span>
+        <span><i class="sw path"></i>最终路径</span>
         <span class="stat" id="pathStat"></span>
       </div>
     </section>
 
-    <!-- SORTING -->
+    <!-- 排序算法 -->
     <section class="view hidden" id="view-sort">
       <div class="toolbar">
-        <label>Algorithm
+        <label>算法
           <select id="sortAlgo">
-            <option value="bubble">Bubble sort</option>
-            <option value="selection">Selection sort</option>
-            <option value="insertion">Insertion sort</option>
-            <option value="quick">Quick sort</option>
-            <option value="merge">Merge sort</option>
+            <option value="bubble">冒泡排序</option>
+            <option value="selection">选择排序</option>
+            <option value="insertion">插入排序</option>
+            <option value="quick">快速排序</option>
+            <option value="merge">归并排序</option>
           </select>
         </label>
-        <label>Size <input type="range" id="sortSize" min="10" max="80" value="40" /></label>
-        <label>Speed
+        <label>数组规模 <input type="range" id="sortSize" min="10" max="80" value="40" /></label>
+        <label>演示速度
           <select id="sortSpeed">
-            <option value="60">Slow</option>
-            <option value="25" selected>Normal</option>
-            <option value="6">Fast</option>
+            <option value="60">慢速</option>
+            <option value="25" selected>正常</option>
+            <option value="6">快速</option>
           </select>
         </label>
-        <button class="btn" id="newArray">↻ New array</button>
-        <button class="btn primary" id="runSort">▶ Sort</button>
-        <button class="btn" id="exitSort" disabled>✕ Exit</button>
+        <button class="btn" id="newArray">↻ 生成新数组</button>
+        <button class="btn primary" id="runSort">▶ 开始排序</button>
+        <button class="btn" id="exitSort" disabled>✕ 退出</button>
       </div>
-      <p class="hint">Bars are compared (highlighted) and swapped until the array is sorted.</p>
+
+      <p class="hint">观察柱状图中元素的比较与交换过程，直至数组完成排序。</p>
+
       <div class="bars" id="bars"></div>
+
       <div class="legend">
-        <span><i class="sw compare"></i>Comparing</span>
-        <span><i class="sw swap"></i>Swapping</span>
-        <span><i class="sw sorted"></i>Sorted</span>
+        <span><i class="sw compare"></i>正在比较</span>
+        <span><i class="sw swap"></i>正在交换</span>
+        <span><i class="sw sorted"></i>已完成排序</span>
         <span class="stat" id="sortStat"></span>
       </div>
     </section>
@@ -111,6 +118,10 @@
     <footer class="foot" id="foot"></footer>
   </main>
 
+  <script src="wasm/bfs.js"></script>
+  <script src="wasm/pathfinding.js"></script>
+  <script src="wasm/sorting.js"></script>
+  <script src="wasm-bridge.js"></script>
   <script src="app.js"></script>
 </body>
 </html>
